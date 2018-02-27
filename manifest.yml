@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook
+  labels:
+    app: webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      labels:
+        app: webhook
+    spec:
+      containers:
+      - name: webhook
+        image: quay.io/ryotarai/k8s-admission-controller-example
+        imagePullPolicy: Always
+        env:
+        - name: CERT_FILE
+          value: "/cert/cert.pem"
+        - name: KEY_FILE
+          value: "/cert/cert-key.pem"
+        volumeMounts:
+        - name: cert
+          mountPath: "/cert"
+          readOnly: true
+        ports:
+        - containerPort: 8080
+      volumes:
+      - name: cert
+        secret:
+          secretName: webhook-cert
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: example-webhook
+spec:
+  selector:
+    app: webhook
+  ports:
+  - protocol: TCP
+    port: 443
+    targetPort: 8080
+
+
